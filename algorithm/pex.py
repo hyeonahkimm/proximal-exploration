@@ -67,11 +67,16 @@ class ProximalExploration:
         # Construct the candiate pool by randomly mutating the sequences. (line 2 of Algorithm 2 in the paper)
         # An implementation heuristics: only mutating sequences near the proximal frontier.
         candidate_pool = []
+        patient = 0
         while len(candidate_pool) < self.num_model_queries_per_round:
+            patient += 1
             candidate_sequence = random_mutation(random.choice(frontier_neighbors)['sequence'], self.alphabet, self.num_random_mutations)
             if candidate_sequence not in measured_sequence_set:
+                patient = 0
                 candidate_pool.append(candidate_sequence)
                 measured_sequence_set.add(candidate_sequence)
+            if patient > 100:
+                break
         
         # Arrange the candidate pool by the distance to the wild type.
         candidate_pool_dict = {}
@@ -103,11 +108,13 @@ class ProximalExploration:
                     stack.append(new_point)
             while len(stack)>=2 and stack[-1][1] < stack[-2][1]:
                 stack.pop(-1)
-            
             # Update query batch and candidate pool. (line 6 of Algorithm 2 in the paper)
             for distance_to_wt, model_score in stack:
                 if len(query_batch) < self.num_queries_per_round:
                     query_batch.append(candidate_pool_dict[distance_to_wt][0]['sequence'])
                     candidate_pool_dict[distance_to_wt].pop(0)
+            
+            if np.sum([len(pool) for _, pool in candidate_pool_dict.items()]) == 0:
+                break
 
         return query_batch

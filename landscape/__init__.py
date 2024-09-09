@@ -1,6 +1,8 @@
 import os
 import importlib
 
+import flexs.utils.sequence_utils as s_utils
+
 protein_alphabet = 'ACDEFGHIKLMNPQRSTVWY'
 
 task_collection = {
@@ -11,7 +13,13 @@ task_collection = {
     'AMIE': protein_alphabet,
     'LGK': protein_alphabet,
     'Pab1': protein_alphabet,
-    'UBE2I': protein_alphabet
+    'UBE2I': protein_alphabet,
+    'tfbind': 'ACGT',
+    'rna1': 'ACGU',
+    'rna2': 'ACGU',
+    'rna3': 'ACGU',
+    'gfp': s_utils.AAS,
+    'aav': s_utils.AAS,
 }
 
 landscape_collection = {}
