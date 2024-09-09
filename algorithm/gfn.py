@@ -260,7 +260,7 @@ class GFNGeneratorExploration:
             # wandb_log = {"generator_total_loss": loss.item()}
             # if self.args.use_wandb:
             #     wandb.log(wandb_log)
-        return candidates, losses
+        return candidates
 
 
 def get_current_radius(iter, round, args, std=None):
