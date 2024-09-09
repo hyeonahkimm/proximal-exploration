@@ -2,6 +2,8 @@ import torch
 import numpy as np
 from utils.seq_utils import sequences_to_tensor
 
+from tqdm import tqdm
+
 class TorchModel:
     def __init__(self, args, alphabet, net, **kwargs):
         self.args = args
@@ -11,7 +13,7 @@ class TorchModel:
         self.optimizer = torch.optim.Adam(net.parameters(), lr=args.lr)
         self.loss_func = torch.nn.MSELoss()
 
-    def get_data_loader(self, sequences, labels):
+    def get_data_loader(self, sequences, labels, rank_coefficient=0.0):
         # Input:  - sequences:    [dataset_size, sequence_length]
         #         - labels:       [dataset_size]
         # Output: - loader_train: torch.utils.data.DataLoader
@@ -19,7 +21,13 @@ class TorchModel:
         one_hots = sequences_to_tensor(sequences, self.alphabet).float()
         labels = torch.from_numpy(labels).float()
         dataset_train = torch.utils.data.TensorDataset(one_hots, labels)
-        loader_train = torch.utils.data.DataLoader(dataset=dataset_train, batch_size=self.args.batch_size, shuffle=True)
+        if rank_coefficient > 0.:
+            ranks = torch.argsort(torch.argsort(-1 * labels))
+            weights = 1.0 / (rank_coefficient * len(labels) + ranks)
+            sampler = torch.utils.data.WeightedRandomSampler(weights=weights, num_samples=len(weights), replacement=True)
+            loader_train = torch.utils.data.DataLoader(dataset=dataset_train, batch_size=self.args.batch_size, sampler=sampler)
+        else:
+            loader_train = torch.utils.data.DataLoader(dataset=dataset_train, batch_size=self.args.batch_size, shuffle=True)
         return loader_train
 
     def compute_loss(self, data):
@@ -38,8 +46,10 @@ class TorchModel:
         
         self.net.train()
         loader_train = self.get_data_loader(sequences, labels)
+
         best_loss, num_no_improvement = np.inf, 0
-        while num_no_improvement < self.args.patience:
+        # while num_no_improvement < self.args.patience:
+        for _ in range(self.args.num_model_max_epochs):
             loss_List = []
             for data in loader_train:
                 loss = self.compute_loss(data)
@@ -53,6 +63,9 @@ class TorchModel:
                 num_no_improvement = 0
             else:
                 num_no_improvement += 1
+            if num_no_improvement >= self.args.patience:
+                # print("Early stopping")
+                break
     
     def get_fitness(self, sequences):
         # Input:  - sequences:   [batch_size, sequence_length]
