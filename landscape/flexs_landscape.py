@@ -25,7 +25,7 @@ class FLEXS_Landscape:
         elif args.task == 'aav':
             self.problem = flexs.landscapes.additive_aav_packaging.registry()['liver']
             self.landscape = flexs.landscapes.AdditiveAAVPackaging(**self.problem['params'])
-            self.starting_sequence = self.landscape.aav_wt_sequence
+            self.starting_sequence = self.landscape.wild_type
 
     def get_fitness(self, sequences):
         # Input:  - sequences:      [query_batch_size, sequence_length]

@@ -56,6 +56,7 @@ def get_args():
         parser.add_argument('--gen_Z_learning_rate', help='Z learning rate', type=float, default=1e-3)
         parser.add_argument('--max_radius', type=float, default=0.01)
         parser.add_argument('--min_radius', type=float, default=0.0)
+        parser.add_argument('--sigma_coeff', type=float, default=1.0)
         parser.add_argument('--gen_sampling_temperature', type=float, default=2.0)
         parser.add_argument('--gen_random_action_prob', type=float, default=0.001)
         parser.add_argument('--frontier_neighbor_size', help='size of the frontier neighbor', type=np.int32, default=5)

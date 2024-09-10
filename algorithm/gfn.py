@@ -274,6 +274,9 @@ def get_current_radius(iter, round, args, std=None):
         return r #max(0.1, min(1.0, r))
     elif args.radius_option == 'fixed':
         return args.max_radius
+    elif args.radius_option == 'proxy_var':
+        r = (args.max_radius-args.min_radius) * ((round+1)/args.num_rounds) + args.min_radius
+        return torch.from_numpy(r - args.sigma_coeff * std).to(args.device).clamp(0.001, 1.0)
     elif args.radius_option == 'proxy_var_fixed':
         return torch.from_numpy(args.max_radius - 0.1 * std).to(args.device).clamp(args.min_radius, 1.0)
         # return torch.from_numpy(args.min_radius - 0.1 * std).to(args.device).clamp(0.0, 1.0)
