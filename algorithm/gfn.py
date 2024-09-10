@@ -154,8 +154,8 @@ class GFNGeneratorExploration:
         
         # scores = self.model.get_fitness(candidate_pool)
         scores = np.concatenate([
-            self.model.get_fitness(query_batch[i:i+self.batch_size])
-            for i in range(0, len(query_batch), self.batch_size)
+            self.model.get_fitness(candidate_pool[i:i+self.batch_size])
+            for i in range(0, len(candidate_pool), self.batch_size)
         ])
         idx_pick = np.argsort(scores)[::-1][:self.args.num_queries_per_round]
         
