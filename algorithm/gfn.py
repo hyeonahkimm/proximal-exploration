@@ -57,10 +57,10 @@ class GFNGeneratorExploration:
         #         - model_scores:       [num_queries]
         
         query_batch = self._propose_sequences(measured_sequences)
-        model_scores = np.concatenate([
-            self.model.get_fitness(query_batch[i:i+self.batch_size])
-            for i in range(0, len(query_batch), self.batch_size)
-        ])
+        # model_scores = np.concatenate([
+        #     self.model.get_fitness(query_batch[i:i+self.batch_size])
+        #     for i in range(0, len(query_batch), self.batch_size)
+        # ])
         return query_batch, model_scores
 
     def _propose_sequences(self, measured_sequences):
@@ -97,7 +97,6 @@ class GFNGeneratorExploration:
         # Construct the candiate pool by randomly mutating the sequences. (line 2 of Algorithm 2 in the paper)
         # An implementation heuristics: only mutating sequences near the proximal frontier.
         generator = GFNLSTMGenerator(self.args, max_len=len(self.wt_sequence))
-        
         candidates = self._train_generator(generator, frontier_neighbors, t=self.round)
         # rs = self.model.get_fitness(candidates)
         
@@ -146,14 +145,18 @@ class GFNGeneratorExploration:
                 else:
                     candidates.extend(decoded_seqs)
                     guide = None
-                    
+
         candidate_pool = []
         for candidate_sequence in candidates:
             if candidate_sequence not in measured_sequence_set:
                 candidate_pool.append(candidate_sequence)
                 measured_sequence_set.add(candidate_sequence)
         
-        scores = self.model.get_fitness(candidate_pool)
+        # scores = self.model.get_fitness(candidate_pool)
+        scores = np.concatenate([
+            self.model.get_fitness(query_batch[i:i+self.batch_size])
+            for i in range(0, len(query_batch), self.batch_size)
+        ])
         idx_pick = np.argsort(scores)[::-1][:self.args.num_queries_per_round]
         
         if self.args.frontier_neighbor_size == 0:
@@ -205,7 +208,7 @@ class GFNGeneratorExploration:
                 if len(query_batch) < self.num_queries_per_round:
                     query_batch.append(candidate_pool_dict[distance_to_wt][0]['sequence'])
                     candidate_pool_dict[distance_to_wt].pop(0)
-        # import pdb; pdb.set_trace()
+        
         return query_batch  # candidate_pool #
     
     def _train_generator(self, generator, frontier_neighbors, t=0):
@@ -236,7 +239,7 @@ class GFNGeneratorExploration:
                 # guide = torch.tensor(np.array(x)).to(self.args.device)
                 seqs = generator.decode(batch_size, guide_seqs=guide, explore_radius=radius, temp=self.args.gen_sampling_temperature)
                 p_bar_log = {"std": std.mean(), "radius": radius if isinstance(radius, float) else radius.mean().item()}
-            
+
             # offline data (both)
             # off_x, _ = self.dataset.sample(batch_size)  # rank-based? weighted_sample(batch_size)
             off_x, _ = self.dataset.weighted_sample(batch_size, 0.01)  # rank-based? weighted_sample(batch_size)

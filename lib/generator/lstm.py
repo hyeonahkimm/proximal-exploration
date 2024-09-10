@@ -31,35 +31,36 @@ class LSTMDecoder(nn.Module):
         sequences = [torch.full((sample_size, 1), self.start, dtype=torch.long).to(self.device)]
         hidden = None
         
-        for i in range(max_len):
-            out = self.encoder(sequences[-1])
-            out, hidden = self.lstm(out, hidden)
-            logit = self.decoder(out)
-         
-            prob = torch.softmax(logit/temp, dim=2)
+        with torch.no_grad():
+            for i in range(max_len):
+                out = self.encoder(sequences[-1])
+                out, hidden = self.lstm(out, hidden)
+                logit = self.decoder(out)
             
-            if guide_seqs is not None:
-                if type(explore_radius) == float:
-                    explore_radius = torch.ones(prob.size(0)).to(prob.device) * explore_radius
-                mask = torch.rand(prob.size(0)).to(prob.device) >= explore_radius
+                prob = torch.softmax(logit/temp, dim=2)
                 
-                distribution = Categorical(probs=prob)
-                tth_sequences = distribution.sample()
-                
-                tth_sequences[mask] = guide_seqs[mask,i].long().unsqueeze(1)
-            elif argmax:
-                tth_sequences = torch.argmax(logit, dim=2)
-            else:
-                # uniform random exploration
-                if torch.rand(1).item() < random_action_prob:
-                    rand_prob = torch.ones_like(prob) * 1/prob.shape[2]
-                    distribution = Categorical(probs=rand_prob)
-                else:
+                if guide_seqs is not None:
+                    if type(explore_radius) == float:
+                        explore_radius = torch.ones(prob.size(0)).to(prob.device) * explore_radius
+                    mask = torch.rand(prob.size(0)).to(prob.device) >= explore_radius
+                    
                     distribution = Categorical(probs=prob)
-                tth_sequences = distribution.sample()
-            sequences.append(tth_sequences)
+                    tth_sequences = distribution.sample()
+                    
+                    tth_sequences[mask] = guide_seqs[mask,i].long().unsqueeze(1)
+                elif argmax:
+                    tth_sequences = torch.argmax(logit, dim=2)
+                else:
+                    # uniform random exploration
+                    if torch.rand(1).item() < random_action_prob:
+                        rand_prob = torch.ones_like(prob) * 1/prob.shape[2]
+                        distribution = Categorical(probs=rand_prob)
+                    else:
+                        distribution = Categorical(probs=prob)
+                    tth_sequences = distribution.sample()
+                sequences.append(tth_sequences)
 
-        sequences = torch.cat(sequences, dim=1)
+            sequences = torch.cat(sequences, dim=1)
 
         return sequences[:, 1:]
 

@@ -24,7 +24,7 @@ class Ensemble:
     def get_fitness(self, sequences, return_std=False):
         # Input:  - sequences:   [batch_size, sequence_length]
         # Output: - predictions: [batch_size]
-        
+
         if return_std:
             ys = [model.get_fitness(sequences) for model in self.models]
             
