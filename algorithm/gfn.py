@@ -56,7 +56,7 @@ class GFNGeneratorExploration:
         # Output: - query_batch:        [num_queries, sequence_length]
         #         - model_scores:       [num_queries]
         
-        query_batch = self._propose_sequences(measured_sequences)
+        query_batch, model_scores = self._propose_sequences(measured_sequences)
         # model_scores = np.concatenate([
         #     self.model.get_fitness(query_batch[i:i+self.batch_size])
         #     for i in range(0, len(query_batch), self.batch_size)
@@ -160,7 +160,7 @@ class GFNGeneratorExploration:
         idx_pick = np.argsort(scores)[::-1][:self.args.num_queries_per_round]
         
         if self.args.frontier_neighbor_size == 0:
-            return np.array(candidate_pool)[idx_pick]
+            return np.array(candidate_pool)[idx_pick], scores[idx_pick]
         
         # candidate_pool = []
         # while len(candidate_pool) < self.num_model_queries_per_round:
