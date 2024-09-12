@@ -68,6 +68,7 @@ def get_args():
         parser.add_argument('--use_mh', action='store_true')
     parser.add_argument('--generator_train_epochs', help='number of model predictions per round', type=np.int32, default=5000)
     parser.add_argument('--init_model', action='store_true')
+    parser.add_argument('--use_rank_based_proxy_training', action='store_true')
     
     # MuFacNet arguments
     if args.net == 'mufacnet':

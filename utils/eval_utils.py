@@ -56,9 +56,9 @@ class Runner:
         for round in range(1, self.num_rounds+1):
             round_start_time = time.time()
 
-            if self.method == 'gfn-al':
-                model.train(self.sequence_buffer, self.fitness_buffer)
-                # model.train_prioritized(self.sequence_buffer, self.fitness_buffer, init_model=self.init_model)
+            if self.args.use_rank_based_proxy_training:
+                # model.train(self.sequence_buffer, self.fitness_buffer)
+                model.train_prioritized(self.sequence_buffer, self.fitness_buffer, init_model=self.init_model)
             else:
                 model.train(self.sequence_buffer, self.fitness_buffer)
             
