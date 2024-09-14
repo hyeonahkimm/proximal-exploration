@@ -47,7 +47,7 @@ def get_args():
     if args.alg == 'pex':
         parser.add_argument('--num_random_mutations', help='number of amino acids to mutate per sequence', type=np.int32, default=2)
         parser.add_argument('--frontier_neighbor_size', help='size of the frontier neighbor', type=np.int32, default=5)
-    elif args.alg == 'gfn-al':
+    elif args.alg == 'gfn-al' or args.alg == 'gfn_seq_editor':
         parser.add_argument('--radius_option', default='none')
         parser.add_argument("--lstm_num_layers", default=2, type=int)
         parser.add_argument("--lstm_hidden_dim", default=512, type=int)
@@ -97,6 +97,7 @@ def get_initial_dataset(task_name):
         y = np.load("./dataset/aav/nonzero-aav-y-init.npy").reshape(-1)
     else:
         raise ValueError(f"Unknown task: {task_name}")
+    x, y = x[:1000], y[:1000]
     return x, y, x[y.argmax()]
 
 if __name__=='__main__':

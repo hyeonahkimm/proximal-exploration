@@ -50,7 +50,7 @@ class Runner:
         else:
             self.update_results(0, starting_dataset[0].tolist(), starting_dataset[1].tolist())
         
-        if self.method == 'gfn-al': #update dataset too
+        if self.method in ['gfn-al', 'gfn_seq_editor']: #update dataset too
             explorer.dataset = BioSeqDataset(explorer.args, explorer.tokenizer, init_data=starting_dataset)
         
         for round in range(1, self.num_rounds+1):

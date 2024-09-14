@@ -113,7 +113,6 @@ class GFNLSTMGenerator(nn.Module):
         log_pf= torch.gather(log_pf, 2, batched_sequence_data[:, 1:].long().unsqueeze(2)).squeeze(2)
         sum_log_pf = log_pf.sum(-1)
         
-        # import pdb; pdb.set_trace()
         loss = (self.Z + sum_log_pf - reward.clamp(min=self.reward_exp_min).log()).pow(2).mean()
         loss.backward()
         torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.gen_clip)

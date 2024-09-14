@@ -57,10 +57,11 @@ class GFNGeneratorExploration:
         #         - model_scores:       [num_queries]
         
         query_batch, model_scores = self._propose_sequences(measured_sequences)
-        # model_scores = np.concatenate([
-        #     self.model.get_fitness(query_batch[i:i+self.batch_size])
-        #     for i in range(0, len(query_batch), self.batch_size)
-        # ])
+        if model_scores is None:
+            model_scores = np.concatenate([
+                self.model.get_fitness(query_batch[i:i+self.batch_size])
+                for i in range(0, len(query_batch), self.batch_size)
+            ])
         return query_batch, model_scores
 
     def _propose_sequences(self, measured_sequences):
@@ -100,57 +101,69 @@ class GFNGeneratorExploration:
         candidates = self._train_generator(generator, frontier_neighbors, t=self.round)
         # rs = self.model.get_fitness(candidates)
         
-        if self.args.K > 0:
-            batch_size = self.args.num_queries_per_round
-            candidates = []
-            guide = None
-            # for k in range(self.args.K):
-            while len(candidates) < self.args.num_model_queries_per_round:
-                if self.args.radius_option == "none":  # default GFN-AL
-                    seqs = generator.decode(batch_size, random_action_prob=0.001, temp=self.args.gen_sampling_temperature)
-                else:
-                    # radius = 0.0 #0.5 + 0.5 * (t+1) / self.args.num_rounds
-                    if guide is None:
-                        if self.args.frontier_neighbor_size > 0 and not self.args.start_from_data:
-                            ref = [random.choice(frontier_neighbors)['sequence'] for _ in range(batch_size)]
-                            x = self.tokenizer.encode(ref)
-                        else:
-                            x, _ = self.dataset.weighted_sample(batch_size)
-                            ref = self.tokenizer.decode(x)
-                            x = np.array(x)
-                        guide = torch.tensor(x).to(self.args.device)
-                    else: 
-                        ref = self.tokenizer.decode(guide)
-                    with torch.no_grad():
-                        ys, std = self.model.get_fitness(ref, return_std=True)
-                    radius = get_current_radius(iter=1000, round=self.round, args=self.args, std=std)
-                    # import pdb; pdb.set_trace()
-                    # guide = torch.tensor(np.array(x)).to(self.args.device)
-                    seqs = generator.decode(batch_size, guide_seqs=guide, explore_radius=radius, temp=self.args.gen_sampling_temperature)
-                decoded_seqs = self.tokenizer.decode(seqs.cpu().numpy())
-                
-                if self.args.use_mh and self.args.radius_option != "none":
-                    with torch.no_grad():
-                        rs = self.model.get_fitness(decoded_seqs)  # np.array (100,) do we have to consider proxy scores too?
-                        log_p = generator.get_log_prob(seqs)
-                        ref_log_p = generator.get_log_prob(guide)
-                        accept_mask = (log_p - ref_log_p) > 0
-                        accept_mask += (torch.rand(accept_mask.shape) < 0.1).to(accept_mask.device)
-                        guide[accept_mask] = seqs[accept_mask]
-                        # import pdb; pdb.set_trace()
-                    # if (k+1) % 5 == 0:
-                    #     # candidates.extend(decoded_seqs)  # updated guided sequences?
-                    #     candidates.extend(self.tokenizer.decode(guide))  # updated guided sequences?self.tokenizer.decode(guide)
-                    #     guide = None
-                else:
-                    candidates.extend(decoded_seqs)
-                    guide = None
-
+        # import pdb; pdb.set_trace()
+        
         candidate_pool = []
         for candidate_sequence in candidates:
             if candidate_sequence not in measured_sequence_set:
                 candidate_pool.append(candidate_sequence)
                 measured_sequence_set.add(candidate_sequence)
+        print(len(candidate_pool))
+        # if len(candidate_pool) < self.num_model_queries_per_round: #self.args.K > 0:
+        batch_size = self.args.num_queries_per_round
+        # candidates = []
+        guide = None
+        # for k in range(self.args.K):
+        while len(candidate_pool) < self.args.num_model_queries_per_round:
+            if self.args.radius_option == "none":  # default GFN-AL
+                seqs = generator.decode(batch_size, random_action_prob=0.001, temp=self.args.gen_sampling_temperature)
+            else:
+                # radius = 0.0 #0.5 + 0.5 * (t+1) / self.args.num_rounds
+                if guide is None:
+                    if self.args.frontier_neighbor_size > 0 and not self.args.start_from_data:
+                        ref = [random.choice(frontier_neighbors)['sequence'] for _ in range(batch_size)]
+                        x = self.tokenizer.encode(ref)
+                    else:
+                        x, _ = self.dataset.weighted_sample(batch_size)
+                        ref = self.tokenizer.decode(x)
+                        x = np.array(x)
+                    guide = torch.tensor(x).to(self.args.device)
+                else: 
+                    ref = self.tokenizer.decode(guide)
+                with torch.no_grad():
+                    ys, std = self.model.get_fitness(ref, return_std=True)
+                radius = get_current_radius(iter=1000, round=self.round, args=self.args, std=std)
+                # import pdb; pdb.set_trace()
+                # guide = torch.tensor(np.array(x)).to(self.args.device)
+                seqs = generator.decode(batch_size, guide_seqs=guide, explore_radius=radius, temp=self.args.gen_sampling_temperature)
+            decoded_seqs = self.tokenizer.decode(seqs.cpu().numpy())
+            
+            if self.args.use_mh and self.args.radius_option != "none":
+                with torch.no_grad():
+                    rs = self.model.get_fitness(decoded_seqs)  # np.array (100,) do we have to consider proxy scores too?
+                    log_p = generator.get_log_prob(seqs)
+                    ref_log_p = generator.get_log_prob(guide)
+                    accept_mask = (log_p - ref_log_p) > 0
+                    accept_mask += (torch.rand(accept_mask.shape) < 0.1).to(accept_mask.device)
+                    guide[accept_mask] = seqs[accept_mask]
+                    # import pdb; pdb.set_trace()
+                # if (k+1) % 5 == 0:
+                #     # candidates.extend(decoded_seqs)  # updated guided sequences?
+                #     candidates.extend(self.tokenizer.decode(guide))  # updated guided sequences?self.tokenizer.decode(guide)
+                #     guide = None
+            else:
+                candidates.extend(decoded_seqs)
+                guide = None
+                for candidate_sequence in decoded_seqs:
+                    if candidate_sequence not in measured_sequence_set:
+                        candidate_pool.append(candidate_sequence)
+                        measured_sequence_set.add(candidate_sequence)
+
+        # candidate_pool = []
+        # for candidate_sequence in candidates:
+        #     if candidate_sequence not in measured_sequence_set:
+        #         candidate_pool.append(candidate_sequence)
+        #         measured_sequence_set.add(candidate_sequence)
         
         # scores = self.model.get_fitness(candidate_pool)
         scores = np.concatenate([
@@ -158,6 +171,8 @@ class GFNGeneratorExploration:
             for i in range(0, len(candidate_pool), self.batch_size)
         ])
         idx_pick = np.argsort(scores)[::-1][:self.args.num_queries_per_round]
+        
+        print(len(candidate_pool))
         
         if self.args.frontier_neighbor_size == 0:
             return np.array(candidate_pool)[idx_pick], scores[idx_pick]
@@ -209,7 +224,7 @@ class GFNGeneratorExploration:
                     query_batch.append(candidate_pool_dict[distance_to_wt][0]['sequence'])
                     candidate_pool_dict[distance_to_wt].pop(0)
         
-        return query_batch  # candidate_pool #
+        return query_batch, None  # candidate_pool #
     
     def _train_generator(self, generator, frontier_neighbors, t=0):
         losses = []
