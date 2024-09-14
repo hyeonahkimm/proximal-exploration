@@ -97,7 +97,7 @@ def get_initial_dataset(task_name):
         y = np.load("./dataset/aav/nonzero-aav-y-init.npy").reshape(-1)
     else:
         raise ValueError(f"Unknown task: {task_name}")
-    x, y = x[:1000], y[:1000]
+    # x, y = x[:1000], y[:1000]
     return x, y, x[y.argmax()]
 
 if __name__=='__main__':
