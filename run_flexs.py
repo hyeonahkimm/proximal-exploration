@@ -51,6 +51,7 @@ def get_args():
         parser.add_argument('--radius_option', default='none')
         parser.add_argument("--lstm_num_layers", default=2, type=int)
         parser.add_argument("--lstm_hidden_dim", default=512, type=int)
+        parser.add_argument("--partition_init", default=50, type=float)
         parser.add_argument("--gen_train_batch_size", default=64, type=int)
         parser.add_argument('--gen_learning_rate', help='learning rate', type=float, default=5e-4)
         parser.add_argument('--gen_Z_learning_rate', help='Z learning rate', type=float, default=1e-3)
@@ -97,7 +98,7 @@ def get_initial_dataset(task_name):
         y = np.load("./dataset/aav/nonzero-aav-y-init.npy").reshape(-1)
     else:
         raise ValueError(f"Unknown task: {task_name}")
-    # x, y = x[:1000], y[:1000]
+    x, y = x[:1000], y[:1000]
     return x, y, x[y.argmax()]
 
 if __name__=='__main__':
