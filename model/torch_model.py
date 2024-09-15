@@ -77,3 +77,26 @@ class TorchModel:
             predictions = self.net(one_hots).cpu().numpy()
         predictions = np.squeeze(predictions, axis=-1)
         return predictions
+    
+    
+    def train_prioritized(self, sequences, labels, rank_coefficient=0.01, init_model=False):
+        # Input: - sequences: [dataset_size, sequence_length]
+        #        - labels:    [dataset_size]
+            
+        self.net.train()
+        loader_train = self.get_data_loader(sequences, labels, rank_coefficient=rank_coefficient)
+        best_loss, num_no_improvement = np.inf, 0
+        while num_no_improvement < self.args.patience:
+            loss_List = []
+            for data in loader_train:
+                loss = self.compute_loss(data)
+                loss_List.append(loss.item())
+                self.optimizer.zero_grad()
+                loss.backward()
+                self.optimizer.step()
+            current_loss = np.mean(loss_List)
+            if current_loss < best_loss:
+                best_loss = current_loss
+                num_no_improvement = 0
+            else:
+                num_no_improvement += 1
