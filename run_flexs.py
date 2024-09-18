@@ -25,7 +25,7 @@ def get_args():
     # algorithm arguments
     parser.add_argument('--alg', help='exploration algorithm', type=str, default='pex', choices=algorithm_collection.keys())
     parser.add_argument('--num_rounds', help='number of query rounds', type=np.int32, default=10)
-    parser.add_argument('--num_queries_per_round', help='number of black-box queries per round', type=np.int32, default=124)
+    parser.add_argument('--num_queries_per_round', help='number of black-box queries per round', type=np.int32, default=128)
     parser.add_argument('--num_model_queries_per_round', help='number of model predictions per round', type=np.int32, default=2000)
     parser.add_argument('--num_model_max_epochs', help='number of model predictions per round', type=np.int32, default=3000)
     
@@ -58,6 +58,7 @@ def get_args():
         parser.add_argument('--max_radius', type=float, default=0.01)
         parser.add_argument('--min_radius', type=float, default=0.0)
         parser.add_argument('--sigma_coeff', type=float, default=1.0)
+        parser.add_argument('--rank_coeff', type=float, default=0.01)
         parser.add_argument('--gen_sampling_temperature', type=float, default=2.0)
         parser.add_argument('--gen_random_action_prob', type=float, default=0.001)
         parser.add_argument('--frontier_neighbor_size', help='size of the frontier neighbor', type=np.int32, default=5)
@@ -98,7 +99,7 @@ def get_initial_dataset(task_name):
         y = np.load("./dataset/aav/nonzero-aav-y-init.npy").reshape(-1)
     else:
         raise ValueError(f"Unknown task: {task_name}")
-    x, y = x[:1000], y[:1000]
+    # x, y = x[:1000], y[:1000]
     return x, y, x[y.argmax()]
 
 if __name__=='__main__':
@@ -111,13 +112,14 @@ if __name__=='__main__':
         torch.cuda.manual_seed_all(args.seed)
         
     if args.use_wandb:
-        run = wandb.init(project='al_wt', group=args.task, config=args, reinit=True)
+        run = wandb.init(project='bioseq_0916', group=args.task, config=args, reinit=True)
         wandb.run.name = f"{args.alg}_{args.name}_{str(args.seed)}_{wandb.run.id}"
     
     landscape, alphabet, starting_sequence = get_landscape(args)
     starting_sequences, starting_scores, ref = get_initial_dataset(args.task)
     starting_sequence = ref if starting_sequence is None else starting_sequence
     
+    print(starting_sequence)
     model = get_model(args, alphabet=alphabet, starting_sequence=starting_sequence)
     explorer = get_algorithm(args, model=model, alphabet=alphabet, starting_sequence=starting_sequence)
 

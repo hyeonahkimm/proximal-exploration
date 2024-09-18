@@ -55,13 +55,13 @@ class Runner:
         
         for round in range(1, self.num_rounds+1):
             round_start_time = time.time()
-
+            
             if self.args.use_rank_based_proxy_training:
                 # model.train(self.sequence_buffer, self.fitness_buffer)
                 model.train_prioritized(self.sequence_buffer, self.fitness_buffer, init_model=self.init_model)
-            else:
+            elif self.method is not 'gfn_seq_editor':
                 model.train(self.sequence_buffer, self.fitness_buffer)
-            
+                
             sequences, model_scores = explorer.propose_sequences(self.results)
             assert len(sequences) <= self.num_queries_per_round
             true_scores = landscape.get_fitness(sequences)

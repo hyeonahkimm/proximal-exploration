@@ -236,7 +236,7 @@ class GFNGeneratorExploration:
                 #     ys, std = self.model.get_fitness(self.tokenizer.decode(seqs), return_std=True)
             else:
                 # radius = 0.0 #0.5 + 0.5 * (t+1) / self.args.num_rounds
-                x, _ = self.dataset.weighted_sample(batch_size, 0.01)
+                x, _ = self.dataset.weighted_sample(batch_size, self.args.rank_coeff)
                 # ref = [random.choice(frontier_neighbors)['sequence'] for _ in range(batch_size)]
                 # x = self.tokenizer.encode(ref)
                 guide = torch.from_numpy(np.stack(x)).to(self.args.device)
@@ -252,7 +252,7 @@ class GFNGeneratorExploration:
 
             # offline data (both)
             # off_x, _ = self.dataset.sample(batch_size)  # rank-based? weighted_sample(batch_size)
-            off_x, _ = self.dataset.weighted_sample(batch_size, 0.01)  # rank-based? weighted_sample(batch_size)
+            off_x, _ = self.dataset.weighted_sample(batch_size, self.args.rank_coeff)  # rank-based? weighted_sample(batch_size)
             if self.args.radius_option == "none" and it > self.args.warmup_iter:
                 seqs = torch.tensor(np.array(off_x)).to(self.args.device)
             else:
