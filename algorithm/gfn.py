@@ -111,7 +111,7 @@ class GFNGeneratorExploration:
             candidates = []
             guide = None
             # for k in range(self.args.K):
-            while len(candidates) < self.args.num_model_queries_per_round:
+            while len(candidates) < self.args.num_queries_per_round * self.args.K: #self.args.num_model_queries_per_round:
                 if self.args.radius_option == "none":  # default GFN-AL
                     seqs = generator.decode(batch_size, random_action_prob=0.001, temp=self.args.gen_sampling_temperature)
                 else:
@@ -121,7 +121,7 @@ class GFNGeneratorExploration:
                             ref = [random.choice(frontier_neighbors)['sequence'] for _ in range(batch_size)]
                             x = self.tokenizer.encode(ref)
                         else:
-                            x, _ = self.dataset.weighted_sample(batch_size)
+                            x, _ = self.dataset.weighted_sample(batch_size, self.args.rank_coeff)
                             ref = self.tokenizer.decode(x)
                             x = np.array(x)
                         guide = torch.tensor(x).to(self.args.device)
@@ -151,16 +151,16 @@ class GFNGeneratorExploration:
                 else:
                     candidates.extend(decoded_seqs)
                     guide = None
-                    # for candidate_sequence in decoded_seqs:
-                    #     if candidate_sequence not in measured_sequence_set:
-                    #         candidate_pool.append(candidate_sequence)
-                    #         measured_sequence_set.add(candidate_sequence)
-
-        candidate_pool = []
-        for candidate_sequence in candidates:
-            if candidate_sequence not in measured_sequence_set:
-                candidate_pool.append(candidate_sequence)
-                measured_sequence_set.add(candidate_sequence)
+                    for candidate_sequence in decoded_seqs:
+                        if candidate_sequence not in measured_sequence_set and candidate_sequence not in candidates:
+                            candidates.append(candidate_sequence)
+                            measured_sequence_set.add(candidate_sequence)
+        candidate_pool = candidates
+        # candidate_pool = []
+        # for candidate_sequence in candidates:
+        #     if candidate_sequence not in measured_sequence_set:
+        #         candidate_pool.append(candidate_sequence)
+        #         measured_sequence_set.add(candidate_sequence)
         
         # scores = self.model.get_fitness(candidate_pool)
         scores = np.concatenate([

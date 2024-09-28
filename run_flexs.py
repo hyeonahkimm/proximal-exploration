@@ -112,12 +112,13 @@ if __name__=='__main__':
         torch.cuda.manual_seed_all(args.seed)
         
     if args.use_wandb:
-        run = wandb.init(project='bioseq_0916', group=args.task, config=args, reinit=True)
+        run = wandb.init(project='bioseq_0928', group=args.task, config=args, reinit=True)
         wandb.run.name = f"{args.alg}_{args.name}_{str(args.seed)}_{wandb.run.id}"
     
     landscape, alphabet, starting_sequence = get_landscape(args)
     starting_sequences, starting_scores, ref = get_initial_dataset(args.task)
     starting_sequence = ref if starting_sequence is None else starting_sequence
+    # import pdb; pdb.set_trace()
     
     print(starting_sequence)
     model = get_model(args, alphabet=alphabet, starting_sequence=starting_sequence)
