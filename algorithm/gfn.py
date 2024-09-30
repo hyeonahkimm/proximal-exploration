@@ -155,12 +155,14 @@ class GFNGeneratorExploration:
                         if candidate_sequence not in measured_sequence_set and candidate_sequence not in candidates:
                             candidates.append(candidate_sequence)
                             measured_sequence_set.add(candidate_sequence)
-        candidate_pool = candidates
-        # candidate_pool = []
-        # for candidate_sequence in candidates:
-        #     if candidate_sequence not in measured_sequence_set:
-        #         candidate_pool.append(candidate_sequence)
-        #         measured_sequence_set.add(candidate_sequence)
+            candidate_pool = candidates
+        else:
+            # candidate_pool = candidates
+            candidate_pool = []
+            for candidate_sequence in candidates:
+                if candidate_sequence not in measured_sequence_set:
+                    candidate_pool.append(candidate_sequence)
+                    measured_sequence_set.add(candidate_sequence)
         
         # scores = self.model.get_fitness(candidate_pool)
         scores = np.concatenate([
