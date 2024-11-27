@@ -127,12 +127,11 @@ class GFNGeneratorExploration:
                         guide = torch.tensor(x).to(self.args.device)
                     else: 
                         ref = self.tokenizer.decode(guide)
+                        
                     with torch.no_grad():
                         ys, std = self.model.get_fitness(ref, return_std=True)
                     radius = get_current_radius(iter=1000, round=self.round, args=self.args, std=std)
-                    # import pdb; pdb.set_trace()
-                    # guide = torch.tensor(np.array(x)).to(self.args.device)
-                    seqs = generator.decode(batch_size, guide_seqs=guide, explore_radius=radius, temp=self.args.gen_sampling_temperature)
+                    seqs = generator.decode(batch_size, guide_seqs=guide, explore_radius=radius, temp=self.args.gen_sampling_temperature, back_and_forth=self.args.back_and_forth)
                 decoded_seqs = self.tokenizer.decode(seqs.cpu().numpy())
                 
                 if self.args.use_mh and self.args.radius_option != "none":
@@ -143,11 +142,6 @@ class GFNGeneratorExploration:
                         accept_mask = (log_p - ref_log_p) > 0
                         accept_mask += (torch.rand(accept_mask.shape) < 0.1).to(accept_mask.device)
                         guide[accept_mask] = seqs[accept_mask]
-                        # import pdb; pdb.set_trace()
-                    # if (k+1) % 5 == 0:
-                    #     # candidates.extend(decoded_seqs)  # updated guided sequences?
-                    #     candidates.extend(self.tokenizer.decode(guide))  # updated guided sequences?self.tokenizer.decode(guide)
-                    #     guide = None
                 else:
                     candidates.extend(decoded_seqs)
                     guide = None
@@ -249,7 +243,7 @@ class GFNGeneratorExploration:
                 radius = get_current_radius(it, t, self.args, std=std)
                 # import pdb; pdb.set_trace()
                 # guide = torch.tensor(np.array(x)).to(self.args.device)
-                seqs = generator.decode(batch_size, guide_seqs=guide, explore_radius=radius, temp=self.args.gen_sampling_temperature)
+                seqs = generator.decode(batch_size, guide_seqs=guide, explore_radius=radius, temp=self.args.gen_sampling_temperature, back_and_forth=self.args.back_and_forth)
                 p_bar_log = {"std": std.mean(), "radius": radius if isinstance(radius, float) else radius.mean().item()}
 
             # offline data (both)

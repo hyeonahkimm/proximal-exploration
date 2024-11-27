@@ -28,6 +28,7 @@ def get_args():
     parser.add_argument('--num_queries_per_round', help='number of black-box queries per round', type=np.int32, default=128)
     parser.add_argument('--num_model_queries_per_round', help='number of model predictions per round', type=np.int32, default=2000)
     parser.add_argument('--num_model_max_epochs', help='number of model predictions per round', type=np.int32, default=3000)
+    parser.add_argument('--num_init', help='number of model predictions per round', type=np.int32, default=-1)
     
     # model arguments
     parser.add_argument('--net', help='surrogate model architecture', type=str, default='mufacnet', choices=model_collection.keys())
@@ -67,7 +68,7 @@ def get_args():
         parser.add_argument('--K',type=np.int32, default=5)
         parser.add_argument('--warmup_iter',type=np.int32, default=0)
         parser.add_argument('--start_from_data', action='store_true')
-        parser.add_argument('--use_mh', action='store_true')
+        parser.add_argument('--back_and_forth', action='store_true')
     parser.add_argument('--generator_train_epochs', help='number of model predictions per round', type=np.int32, default=5000)
     parser.add_argument('--init_model', action='store_true')
     parser.add_argument('--use_rank_based_proxy_training', action='store_true')
@@ -81,7 +82,7 @@ def get_args():
     return args
 
 
-def get_initial_dataset(task_name):
+def get_initial_dataset(task_name, num_init=-1):
     stoi = dict(enumerate(task_collection[task_name.lower()]))
     if task_name.lower() == 'tfbind':
         encoded = np.load("./dataset/tfbind/tfbind-x-init.npy")
@@ -99,7 +100,9 @@ def get_initial_dataset(task_name):
         y = np.load("./dataset/aav/nonzero-aav-y-init.npy").reshape(-1)
     else:
         raise ValueError(f"Unknown task: {task_name}")
-    # x, y = x[:1000], y[:1000]
+    if num_init > 0:
+        idx = np.argsort(y)
+        x, y = x[idx[:num_init]], y[idx[:num_init]]
     return x, y, x[y.argmax()]
 
 if __name__=='__main__':
@@ -116,7 +119,7 @@ if __name__=='__main__':
         wandb.run.name = f"{args.alg}_{args.name}_{str(args.seed)}_{wandb.run.id}"
     
     landscape, alphabet, starting_sequence = get_landscape(args)
-    starting_sequences, starting_scores, ref = get_initial_dataset(args.task)
+    starting_sequences, starting_scores, ref = get_initial_dataset(args.task, args.num_init)
     starting_sequence = ref if starting_sequence is None else starting_sequence
     # import pdb; pdb.set_trace()
     

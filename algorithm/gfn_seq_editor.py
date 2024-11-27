@@ -84,10 +84,14 @@ class GFNGeneratorExploration:
         self._train_generator(generator)
         # rs = self.model.get_fitness(candidates)
         
-        off_x, off_y = self.dataset.weighted_sample(self.args.num_queries_per_round)  # rank-based? weighted_sample(batch_size)
-        off_x = torch.tensor(np.array(off_x)).to(self.args.device)
-        print('before:', np.mean(off_y))
+        # off_x, off_y = self.dataset.weighted_sample(self.args.num_queries_per_round, self.args.rank_coeff)  # rank-based? weighted_sample(batch_size)
+        # # import pdb; pdb.set_trace()
+        # # off_x = np.array(self.tokenizer.encode(self.wt_sequence)).reshape(1, -1).repeat(self.args.num_queries_per_round, axis=0)
+        # off_x = torch.tensor(np.array(off_x)).to(self.args.device)
+        # print('before:', np.mean(off_y))
         # start_tokens = torch.ones(off_x.size(0), 1).long().to(seqs.device) * generator.model.start
+        
+        off_x = torch.tensor(self.tokenizer.encode(self.wt_sequence)).reshape(1, -1).repeat(self.args.num_queries_per_round, 1).to(self.args.device)
         
         sequences = [torch.full((self.args.num_queries_per_round, 1), generator.model.start, dtype=torch.long).to(self.args.device)]
         hidden = None
@@ -136,8 +140,8 @@ class GFNGeneratorExploration:
         for it in p_bar:
             p_bar_log = {}
             # offline data (both)
-            # off_x, _ = self.dataset.sample(batch_size)  # rank-based? weighted_sample(batch_size)
-            off_x, off_y = self.dataset.weighted_sample(batch_size, 0.01)  # rank-based? weighted_sample(batch_size)
+            off_x, off_y = self.dataset.sample(batch_size)  # rank-based? weighted_sample(batch_size)
+            # off_x, off_y = self.dataset.weighted_sample(batch_size, self.args.rank_coeff)  # rank-based? weighted_sample(batch_size)
             seqs = torch.tensor(np.array(off_x)).to(self.args.device)
             rs = torch.tensor(off_y).to(seqs.device)
 

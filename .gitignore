@@ -1,5 +1,6 @@
 landscape_params/
 wandb/
+results/
 *.sh
 
 # Byte-compiled / optimized / DLL files
